@@ -22,19 +22,19 @@ public sealed class LedgerEntry
         string? timeZone)
     {
         if (debitAccountId == Guid.Empty)
-            throw new InvalidLedgerException("A debit account is required.");
+            throw new InvalidLedgerException("A debit account is required.", "debitAccountId");
 
         if (creditAccountId == Guid.Empty)
-            throw new InvalidLedgerException("A credit account is required.");
+            throw new InvalidLedgerException("A credit account is required.", "creditAccountId");
 
         if (debitAccountId == creditAccountId)
-            throw new InvalidLedgerException("The debit and credit accounts must be different.");
+            throw new InvalidLedgerException("The debit and credit accounts must be different.", "debitAccountId", "creditAccountId");
 
         if (amount <= 0)
-            throw new InvalidLedgerException("Amount must be greater than zero.");
+            throw new InvalidLedgerException("Amount must be greater than zero.", "amount");
 
         if (decimal.Round(amount, 2) != amount)
-            throw new InvalidLedgerException("Amount must have at most two decimal places.");
+            throw new InvalidLedgerException("Amount must have at most two decimal places.", "amount");
 
         return new LedgerEntry
         {

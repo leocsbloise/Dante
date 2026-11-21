@@ -1,8 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Dante.Infrastructure;
 using Dante.Ledger;
 using Dante.Users;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dante.Server.Controllers;
@@ -16,13 +18,16 @@ public sealed class LedgerController(ILedgerService ledger) : ControllerBase
     public async Task<IActionResult> Create(CreateLedgerRequest request, CancellationToken cancellationToken)
     {
         var entry = await ledger.CreateAsync(GetUserId(), request, cancellationToken);
-        return Created($"/api/ledger/{entry.Id}", entry);
+        return Created(
+            $"/api/ledger/{entry.Id}",
+            ApiResponse.WithData(StatusCodes.Status201Created, "Movement recorded.", entry));
     }
 
     [HttpGet]
-    public async Task<LedgerPage> Search([FromQuery] LedgerSearchRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Search([FromQuery] LedgerSearchRequest request, CancellationToken cancellationToken)
     {
-        return await ledger.SearchAsync(GetUserId(), request, cancellationToken);
+        var page = await ledger.SearchAsync(GetUserId(), request, cancellationToken);
+        return Ok(ApiResponse.WithData(StatusCodes.Status200OK, "Movements loaded.", page));
     }
 
     private Guid GetUserId()

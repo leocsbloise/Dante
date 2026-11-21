@@ -3,6 +3,7 @@ using Dante.Banks;
 using Dante.Infrastructure;
 using Dante.Ledger;
 using Dante.Users;
+using Microsoft.AspNetCore.Mvc;
 
 EnvFile.Load();
 
@@ -13,7 +14,8 @@ builder.Services.AddAccounts();
 builder.Services.AddBanks();
 builder.Services.AddLedger();
 builder.Services.AddDanteInfrastructure(builder.Configuration);
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(ModelStateResponses.Configure);
 builder.Services.AddOpenApi();
 
 var app = builder.Build();

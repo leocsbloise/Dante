@@ -34,7 +34,7 @@ public sealed class AccountApiTests(DanteApiFactory factory)
 
         var login = await client.PostAsJsonAsync("/api/auth/login", new { username, password });
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
-        var token = await login.Content.ReadFromJsonAsync<LoginBody>();
+        var token = (await login.Content.ReadFromJsonAsync<Envelope<LoginBody>>())?.Data;
         Assert.False(string.IsNullOrWhiteSpace(token?.AccessToken));
 
         var rejected = await client.PostAsJsonAsync("/api/auth/login", new { username, password = "wrong-password" });
@@ -52,27 +52,27 @@ public sealed class AccountApiTests(DanteApiFactory factory)
         ownerClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", owner.AccessToken);
         var created = await ownerClient.PostAsJsonAsync("/api/accounts", new { bankId = bank.Id, name = "Salary" });
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
-        var account = await created.Content.ReadFromJsonAsync<AccountBody>();
+        var account = (await created.Content.ReadFromJsonAsync<Envelope<AccountBody>>())?.Data;
         Assert.Equal("Salary", account?.Name);
         Assert.Equal(bank.Id, account?.Bank.Id);
 
-        var ownerAccounts = await ownerClient.GetFromJsonAsync<List<AccountBody>>("/api/accounts");
+        var ownerAccounts = (await (await ownerClient.GetAsync("/api/accounts")).Content.ReadFromJsonAsync<Envelope<List<AccountBody>>>())?.Data;
         Assert.Equal(account!.Id, Assert.Single(ownerAccounts!).Id);
 
         using var otherClient = factory.CreateClient();
         otherClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", other.AccessToken);
-        var otherAccounts = await otherClient.GetFromJsonAsync<List<AccountBody>>("/api/accounts");
+        var otherAccounts = (await (await otherClient.GetAsync("/api/accounts")).Content.ReadFromJsonAsync<Envelope<List<AccountBody>>>())?.Data;
         Assert.Empty(otherAccounts!);
 
         var deleted = await ownerClient.DeleteAsync($"/api/accounts/{account.Id}");
-        Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, deleted.StatusCode);
         var hidden = await otherClient.DeleteAsync($"/api/accounts/{account.Id}");
         Assert.Equal(HttpStatusCode.NotFound, hidden.StatusCode);
 
-        var remaining = await ownerClient.GetFromJsonAsync<List<AccountBody>>("/api/accounts");
+        var remaining = (await (await ownerClient.GetAsync("/api/accounts")).Content.ReadFromJsonAsync<Envelope<List<AccountBody>>>())?.Data;
         Assert.Empty(remaining!);
 
-        var banks = await ownerClient.GetFromJsonAsync<List<BankBody>>("/api/banks");
+        var banks = (await (await ownerClient.GetAsync("/api/banks")).Content.ReadFromJsonAsync<Envelope<List<BankBody>>>())?.Data;
         Assert.Contains(banks!, candidate => candidate.Id == bank.Id);
     }
 
@@ -139,7 +139,7 @@ public sealed class AccountApiTests(DanteApiFactory factory)
         register.EnsureSuccessStatusCode();
         var login = await client.PostAsJsonAsync("/api/auth/login", new { username, password });
         login.EnsureSuccessStatusCode();
-        return (await login.Content.ReadFromJsonAsync<LoginBody>())!;
+        return (await login.Content.ReadFromJsonAsync<Envelope<LoginBody>>())!.Data!;
     }
 
     private static string UniqueUsername() => $"user{Guid.NewGuid():N}"[..12];

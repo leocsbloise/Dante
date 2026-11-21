@@ -37,27 +37,49 @@ public sealed class DomainExceptionHandler(ILogger<DomainExceptionHandler> logge
             exception.GetType().FullName);
 
         httpContext.Response.StatusCode = status;
-        await httpContext.Response.WriteAsJsonAsync(new ErrorBody(exception.Message), cancellationToken);
+        var fields = FieldsOf(exception);
+        if (fields.Count == 0)
+            await httpContext.Response.WriteAsJsonAsync(ApiResponse.WithoutData(status, exception.Message), cancellationToken);
+        else
+            await httpContext.Response.WriteAsJsonAsync(ApiResponse.ForFields(status, fields, exception.Message), cancellationToken);
+
         return true;
     }
 
-    private sealed record ErrorBody(string Error);
+    private static IReadOnlyList<string> FieldsOf(Exception exception) => exception switch
+    {
+        InvalidUsernameException or UsernameAlreadyInUseException => ["username"],
+        InvalidPasswordException => ["password"],
+        InvalidAccountException account => account.Fields,
+        InvalidLedgerException ledger => ledger.Fields,
+        BankNotFoundException => ["bankId"],
+        _ => [],
+    };
 }
 
 public sealed class UnhandledExceptionHandler(ILogger<UnhandledExceptionHandler> logger) : IExceptionHandler
 {
-    public ValueTask<bool> TryHandleAsync(
+    public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
         CancellationToken cancellationToken)
     {
-        ExceptionTelemetry.Tag(Activity.Current, exception, StatusCodes.Status500InternalServerError, failed: true);
+        const int status = StatusCodes.Status500InternalServerError;
+        ExceptionTelemetry.Tag(Activity.Current, exception, status, failed: true);
         logger.LogError(
             exception,
             "Request failed with status {StatusCode} from {ExceptionType}.",
-            StatusCodes.Status500InternalServerError,
+            status,
             exception.GetType().FullName);
-        return ValueTask.FromResult(false);
+
+        if (httpContext.Response.HasStarted)
+            return true;
+
+        httpContext.Response.StatusCode = status;
+        await httpContext.Response.WriteAsJsonAsync(
+            ApiResponse.WithoutData(status, ApiResponse.UnexpectedMessage),
+            cancellationToken);
+        return true;
     }
 }
 

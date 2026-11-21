@@ -16,4 +16,4 @@ response:
   body:
     type: json
     content: |-
-      {"error":"The cursor is not valid."}
+      {"message":"Some information needs to be corrected.","status":400,"operation_id":"4bf92f3577b34da6a3ce929d0e0e4736","data":{"cursor":"The cursor belongs to a different search."}}

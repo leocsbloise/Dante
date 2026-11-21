@@ -8,7 +8,7 @@ public static class LedgerTimeZone
     {
         var timeZone = value?.Trim() ?? string.Empty;
         if (timeZone.Length == 0 || timeZone.Length > MaxLength || !TimeZoneInfo.TryFindSystemTimeZoneById(timeZone, out _))
-            throw new InvalidLedgerException("Time zone was not recognized.");
+            throw new InvalidLedgerException("Time zone was not recognized.", "timeZone");
 
         return timeZone;
     }

@@ -16,7 +16,7 @@ public sealed class Account
             throw new InvalidAccountException("A user is required.");
 
         if (bankId == Guid.Empty)
-            throw new InvalidAccountException("A bank is required.");
+            throw new InvalidAccountException("A bank is required.", "bankId");
 
         return new Account
         {

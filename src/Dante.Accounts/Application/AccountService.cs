@@ -28,7 +28,7 @@ public sealed class AccountService(IAccountRepository accounts, IBankRepository 
     public async Task<AccountResponse> CreateAsync(Guid userId, CreateAccountRequest request, CancellationToken cancellationToken)
     {
         if (request.BankId is null || request.BankId == Guid.Empty)
-            throw new InvalidAccountException("A bank is required.");
+            throw new InvalidAccountException("A bank is required.", "bankId");
 
         var bank = await banks.FindAsync(request.BankId.Value, cancellationToken);
         if (bank is null)

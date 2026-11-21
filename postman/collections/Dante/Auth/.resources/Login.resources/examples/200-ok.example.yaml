@@ -20,4 +20,4 @@ response:
   body:
     type: json
     content: |-
-      {"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example","expiresAt":"2026-11-21T16:00:00+00:00"}
+      {"message":"Signed in.","status":200,"operation_id":"4bf92f3577b34da6a3ce929d0e0e4736","data":{"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example","expiresAt":"2026-11-21T16:00:00+00:00"}}

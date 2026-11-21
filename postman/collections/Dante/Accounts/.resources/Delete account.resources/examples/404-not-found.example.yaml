@@ -16,4 +16,4 @@ response:
   body:
     type: json
     content: |-
-      {"error":"Account was not found."}
+      {"message":"Account was not found.","status":404,"operation_id":"4bf92f3577b34da6a3ce929d0e0e4736"}

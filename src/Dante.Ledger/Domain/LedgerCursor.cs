@@ -34,7 +34,7 @@ public static class LedgerCursor
             padded = padded.PadRight(padded.Length + (4 - padded.Length % 4) % 4, '=');
             var lines = Encoding.UTF8.GetString(Convert.FromBase64String(padded)).Split('\n');
             if (lines.Length != 5)
-                throw new InvalidLedgerException("The cursor is not valid.");
+                throw new InvalidLedgerException("The cursor is not valid.", "cursor");
 
             return (ParseInstant(lines[0]), new LedgerSearch(
                 ParseAccount(lines[1]),
@@ -48,7 +48,7 @@ public static class LedgerCursor
         }
         catch (Exception)
         {
-            throw new InvalidLedgerException("The cursor is not valid.");
+            throw new InvalidLedgerException("The cursor is not valid.", "cursor");
         }
     }
 
@@ -62,7 +62,7 @@ public static class LedgerCursor
     private static DateTimeOffset ParseInstant(string text)
     {
         if (!DateTimeOffset.TryParseExact(text, "yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var instant))
-            throw new InvalidLedgerException("The cursor is not valid.");
+            throw new InvalidLedgerException("The cursor is not valid.", "cursor");
 
         return instant.ToUniversalTime();
     }
@@ -75,7 +75,7 @@ public static class LedgerCursor
             return null;
 
         if (!Guid.TryParseExact(text, "D", out var id))
-            throw new InvalidLedgerException("The cursor is not valid.");
+            throw new InvalidLedgerException("The cursor is not valid.", "cursor");
 
         return id;
     }
