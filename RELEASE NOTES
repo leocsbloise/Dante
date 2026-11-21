@@ -1,0 +1,11 @@
+# v0.0.1
+
+The first version of Dante.
+
+You sign in with a name you choose and a password. Dante asks for no personal data, and it is not connected to any bank or banking service. Every account and movement is a record you enter.
+
+- Keep accounts named after banks in the Brazilian catalog.
+- Write down a movement from one of your accounts to another, with the amount and the moment it happened.
+- Look back by the account the money left, the account it arrived in, or a stretch of time in your time zone.
+
+Each response includes a trace id, so a failure can be found in the logs.
