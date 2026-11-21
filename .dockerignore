@@ -1,0 +1,8 @@
+**/.git
+**/.vs
+**/.github
+**/bin
+**/obj
+**/tests
+**/*.md
+.env
