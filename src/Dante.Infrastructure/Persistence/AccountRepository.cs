@@ -39,6 +39,18 @@ public sealed class AccountRepository(DanteDbContext db) : IAccountRepository
             })).ToList();
     }
 
+    public async Task<IReadOnlySet<Guid>> FindOwnedIdsAsync(
+        Guid userId,
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken)
+    {
+        var found = await db.Accounts.AsNoTracking()
+            .Where(account => account.UserId == userId && ids.Contains(account.Id))
+            .Select(account => account.Id)
+            .ToListAsync(cancellationToken);
+        return found.ToHashSet();
+    }
+
     public void Add(Account account) => db.Accounts.Add(account);
 
     public async Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken cancellationToken)

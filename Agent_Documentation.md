@@ -10,7 +10,7 @@ PostgreSQL runs through Docker Compose. The API reads `ConnectionStrings__Dante`
 
 Passwords are stored as PBKDF2 hashes. Authentication uses a signed JWT.
 
-Users have a username, a password hash, and a creation time. Accounts belong to one user and one real bank. Deleting a user deletes that user's accounts. Deleting an account does not delete the user. A bank that still has accounts cannot be deleted.
+Users have a username, a password hash, and a creation time. Accounts belong to one user and one real bank. Deleting a user deletes that user's accounts and every ledger entry that uses them. Deleting an account deletes every ledger entry that debits or credits it. Deleting an account does not delete the user. A bank that still has accounts cannot be deleted.
 
 Banks come from `https://brasilapi.com.br/api/banks/v1`. ISPB is the stable key. On startup, new banks are inserted and changed names, COMPE codes, and logos are updated. Banks that disappear from the source stay in the database.
 
@@ -19,7 +19,7 @@ Banks come from `https://brasilapi.com.br/api/banks/v1`. ISPB is the stable key.
 | Project | Role |
 |---|---|
 | `Dante.Server` | Composition root and HTTP controllers |
-| `Dante.Users`, `Dante.Accounts`, `Dante.Banks` | One project per domain |
+| `Dante.Users`, `Dante.Accounts`, `Dante.Banks`, `Dante.Ledger` | One project per domain |
 | `Dante.Infrastructure` | Database, external services, hashing, JWT, exception translation, and telemetry |
 
 A new domain gets its own project with the same split. Do not put domain rules back into `Dante.Server`.
@@ -28,7 +28,7 @@ A new domain gets its own project with the same split. Do not put domain rules b
 
 Domain code holds entities, invariants, domain exceptions, and the repository interfaces. It does not reference Entity Framework, HTTP, the database, or OpenTelemetry.
 
-Application services apply use cases. They depend on interfaces, orchestrate repositories, and call domain rules. Register them with dependency injection from the domain project (`AddUsers`, `AddAccounts`, `AddBanks`).
+Application services apply use cases. They depend on interfaces, orchestrate repositories, and call domain rules. Register them with dependency injection from the domain project (`AddUsers`, `AddAccounts`, `AddBanks`, `AddLedger`).
 
 Repositories are the only place that talks to persistence or to an external query source. Database access and the BrasilAPI client are both repositories. Their implementations live in `Dante.Infrastructure` and are registered from `AddDanteInfrastructure`.
 
@@ -66,5 +66,7 @@ Export traces, metrics, and logs through OTLP only when `OTEL_EXPORTER_OTLP_ENDP
 | `GET` | `/api/accounts` |
 | `POST` | `/api/accounts` |
 | `DELETE` | `/api/accounts/{id}` |
+| `POST` | `/api/ledger` |
+| `GET` | `/api/ledger` |
 
-Bank and account routes require the JWT. Account queries and deletes are limited to the user in the token.
+Bank, account, and ledger routes require the JWT. Account and ledger operations are limited to the user in the token. A ledger search accepts a debit account, a credit account, and a time window. Each one is optional, at least one is required, and each one that is present narrows the result. The window is a pair of local bounds plus an IANA time zone. Those bounds are converted to UTC before they are compared with `OccurredAt`, and the end is exclusive. Pages contain at most 100 rows and are ordered by `OccurredAt` only. The cursor continues that same search. A different filter is a new search, so the previous cursor is dropped.

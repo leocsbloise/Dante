@@ -8,6 +8,11 @@ public interface IAccountRepository
 {
     Task<IReadOnlyList<OwnedAccount>> ListByUserAsync(Guid userId, CancellationToken cancellationToken);
 
+    Task<IReadOnlySet<Guid>> FindOwnedIdsAsync(
+        Guid userId,
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken);
+
     void Add(Account account);
 
     Task<bool> DeleteAsync(Guid id, Guid userId, CancellationToken cancellationToken);

@@ -1,6 +1,7 @@
 using System.Text;
 using Dante.Accounts;
 using Dante.Banks;
+using Dante.Ledger;
 using Dante.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -32,6 +33,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IBankRepository, BankRepository>();
+        services.AddScoped<ILedgerRepository, LedgerRepository>();
 
         var catalogUrl = configuration["Banks:CatalogUrl"] ?? "https://brasilapi.com.br/api/";
         services.AddHttpClient<IBankCatalogRepository, BrasilApiBankCatalogRepository>(client =>

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Dante.Accounts;
 using Dante.Banks;
+using Dante.Ledger;
 using Dante.Users;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
@@ -20,7 +21,7 @@ public sealed class DomainExceptionHandler(ILogger<DomainExceptionHandler> logge
             UsernameAlreadyInUseException => StatusCodes.Status409Conflict,
             InvalidCredentialsException => StatusCodes.Status401Unauthorized,
             AccountNotFoundException => StatusCodes.Status404NotFound,
-            InvalidUsernameException or InvalidPasswordException or InvalidAccountException or BankNotFoundException or InvalidBankException
+            InvalidUsernameException or InvalidPasswordException or InvalidAccountException or BankNotFoundException or InvalidBankException or InvalidLedgerException
                 => StatusCodes.Status400BadRequest,
             _ => 0,
         };

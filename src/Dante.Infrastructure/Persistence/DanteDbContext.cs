@@ -1,5 +1,6 @@
 using Dante.Accounts;
 using Dante.Banks;
+using Dante.Ledger;
 using Dante.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,8 @@ public sealed class DanteDbContext(DbContextOptions<DanteDbContext> options) : D
     public DbSet<Bank> Banks => Set<Bank>();
 
     public DbSet<Account> Accounts => Set<Account>();
+
+    public DbSet<LedgerEntry> LedgerEntries => Set<LedgerEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,5 +49,51 @@ public sealed class DanteDbContext(DbContextOptions<DanteDbContext> options) : D
                 .HasForeignKey(account => account.BankId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        modelBuilder.Entity<LedgerEntry>(entity =>
+        {
+            entity.Property(entry => entry.Amount).HasPrecision(19, 2);
+            entity.Property(entry => entry.TimeZone).HasMaxLength(LedgerTimeZone.MaxLength).IsRequired();
+            entity.Property(entry => entry.OccurredAt).IsRequired();
+            entity.Property<long>("OccurredUtcTicks").IsRequired();
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint("CK_LedgerEntries_Amount", "\"Amount\" > 0");
+                table.HasCheckConstraint(
+                    "CK_LedgerEntries_Accounts",
+                    "\"DebitAccountId\" <> \"CreditAccountId\"");
+            });
+
+            entity.HasOne<Account>()
+                .WithMany()
+                .HasForeignKey(entry => entry.DebitAccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<Account>()
+                .WithMany()
+                .HasForeignKey(entry => entry.CreditAccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    public override int SaveChanges()
+    {
+        StampLedgerInstants();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        StampLedgerInstants();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void StampLedgerInstants()
+    {
+        foreach (var entry in ChangeTracker.Entries<LedgerEntry>())
+        {
+            if (entry.State == EntityState.Added)
+                entry.Property("OccurredUtcTicks").CurrentValue = entry.Entity.OccurredAt.ToUniversalTime().UtcTicks;
+        }
     }
 }

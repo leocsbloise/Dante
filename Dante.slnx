@@ -3,6 +3,7 @@
     <Project Path="src/Dante.Accounts/Dante.Accounts.csproj" />
     <Project Path="src/Dante.Banks/Dante.Banks.csproj" />
     <Project Path="src/Dante.Infrastructure/Dante.Infrastructure.csproj" />
+    <Project Path="src/Dante.Ledger/Dante.Ledger.csproj" />
     <Project Path="src/Dante.Server/Dante.Server.csproj" />
     <Project Path="src/Dante.Users/Dante.Users.csproj" />
   </Folder>

@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Dante.Users\Dante.Users.csproj" />
     <ProjectReference Include="..\Dante.Accounts\Dante.Accounts.csproj" />
+    <ProjectReference Include="..\Dante.Ledger\Dante.Ledger.csproj" />
     <ProjectReference Include="..\Dante.Banks\Dante.Banks.csproj" />
   </ItemGroup>
 
