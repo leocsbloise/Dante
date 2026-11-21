@@ -1,0 +1,4 @@
+$kind: collection
+name: Ledger
+description: Record a balanced entry between two accounts owned by the caller.
+order: 4000

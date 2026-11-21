@@ -1,0 +1,19 @@
+$kind: http-example
+name: 400 Invalid cursor
+order: 2000
+request:
+  method: GET
+  url: http://localhost:5259/api/ledger?creditAccountId=22222222-2222-2222-2222-222222222222&cursor=c3RhbGU
+  headers:
+    - key: Authorization
+      value: Bearer {{access_token}}
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {"error":"The cursor is not valid."}

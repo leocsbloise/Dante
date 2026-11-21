@@ -1,0 +1,10 @@
+$kind: http-request
+order: 2000
+method: GET
+url: "{{base_url}}/api/ledger?debitAccountId={{debit_account_id}}&limit=100"
+queryParams:
+  - key: debitAccountId
+    value: "{{debit_account_id}}"
+  - key: limit
+    value: "100"
+examples: ./.resources/Search entries.resources/examples/

@@ -1,6 +1,7 @@
 using Dante.Accounts;
 using Dante.Banks;
 using Dante.Infrastructure;
+using Dante.Ledger;
 using Dante.Users;
 
 EnvFile.Load();
@@ -10,6 +11,7 @@ builder.AddDanteOpenTelemetry();
 builder.Services.AddUsers();
 builder.Services.AddAccounts();
 builder.Services.AddBanks();
+builder.Services.AddLedger();
 builder.Services.AddDanteInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

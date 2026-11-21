@@ -1,0 +1,25 @@
+$kind: http-example
+name: 404 Account not found
+order: 3000
+request:
+  method: POST
+  url: http://localhost:5259/api/ledger
+  headers:
+    - key: Content-Type
+      value: application/json
+    - key: Authorization
+      value: Bearer {{access_token}}
+  body:
+    type: json
+    content: |-
+      {"debitAccountId":"11111111-1111-1111-1111-111111111111","creditAccountId":"00000000-0000-0000-0000-000000000000","amount":10.5,"occurredAt":"2026-03-15T22:30:00-03:00","timeZone":"America/Sao_Paulo"}
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {"error":"Account was not found."}

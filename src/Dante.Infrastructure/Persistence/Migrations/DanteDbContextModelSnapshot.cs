@@ -84,6 +84,47 @@ namespace Dante.Infrastructure.Persistence.Migrations
                     b.ToTable("Banks");
                 });
 
+            modelBuilder.Entity("Dante.Ledger.LedgerEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(19, 2)
+                        .HasColumnType("numeric(19,2)");
+
+                    b.Property<Guid>("CreditAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DebitAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("OccurredUtcTicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreditAccountId");
+
+                    b.HasIndex("DebitAccountId");
+
+                    b.ToTable("LedgerEntries", t =>
+                        {
+                            t.HasCheckConstraint("CK_LedgerEntries_Accounts", "\"DebitAccountId\" <> \"CreditAccountId\"");
+
+                            t.HasCheckConstraint("CK_LedgerEntries_Amount", "\"Amount\" > 0");
+                        });
+                });
+
             modelBuilder.Entity("Dante.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -122,6 +163,21 @@ namespace Dante.Infrastructure.Persistence.Migrations
                     b.HasOne("Dante.Users.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Dante.Ledger.LedgerEntry", b =>
+                {
+                    b.HasOne("Dante.Accounts.Account", null)
+                        .WithMany()
+                        .HasForeignKey("CreditAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Dante.Accounts.Account", null)
+                        .WithMany()
+                        .HasForeignKey("DebitAccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
