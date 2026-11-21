@@ -1,0 +1,23 @@
+$kind: http-request
+order: 2000
+method: POST
+url: "{{base_url}}/api/accounts"
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "bankId": "{{bank_id}}",
+      "name": "Checking"
+    }
+examples: ./.resources/Create account.resources/examples/
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      if (pm.response.code === 201) {
+        const body = pm.response.json();
+        pm.collectionVariables.set("account_id", body.id);
+      }

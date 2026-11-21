@@ -1,0 +1,23 @@
+$kind: http-example
+name: 409 Username taken
+order: 3000
+request:
+  method: POST
+  url: http://localhost:5259/api/auth/register
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {"username":"Ada","password":"correct-horse"}
+response:
+  statusCode: 409
+  statusText: Conflict
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {"error":"Username is already in use."}

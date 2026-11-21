@@ -1,0 +1,25 @@
+$kind: http-example
+name: 201 Created
+order: 1000
+request:
+  method: POST
+  url: http://localhost:5259/api/auth/register
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {"username":"ada","password":"correct-horse"}
+response:
+  statusCode: 201
+  statusText: Created
+  headers:
+    - key: Content-Type
+      value: application/json
+    - key: Location
+      value: /api/users/3fa85f64-5717-4562-b3fc-2c963f66afa6
+  body:
+    type: json
+    content: |-
+      {"id":"3fa85f64-5717-4562-b3fc-2c963f66afa6","username":"ada","createdAt":"2026-11-21T15:00:00+00:00"}

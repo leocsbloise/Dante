@@ -1,0 +1,19 @@
+$kind: http-example
+name: 404 Not found
+order: 2000
+request:
+  method: DELETE
+  url: http://localhost:5259/api/accounts/00000000-0000-0000-0000-000000000000
+  headers:
+    - key: Authorization
+      value: Bearer {{access_token}}
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {"error":"Account was not found."}

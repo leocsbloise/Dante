@@ -1,0 +1,4 @@
+$kind: collection
+name: Banks
+description: Read-only bank catalog. Requires the bearer token from Login.
+order: 2000

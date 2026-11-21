@@ -1,0 +1,23 @@
+$kind: http-example
+name: 400 Invalid username
+order: 2000
+request:
+  method: POST
+  url: http://localhost:5259/api/auth/register
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {"username":"a","password":"correct-horse"}
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {"error":"Username must be 3 to 32 characters and use letters, digits, dots, underscores, or hyphens."}

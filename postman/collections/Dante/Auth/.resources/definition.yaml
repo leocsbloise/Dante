@@ -1,0 +1,6 @@
+$kind: collection
+name: Auth
+description: Public registration and login. These requests do not send a bearer token.
+auth:
+  type: noauth
+order: 1000

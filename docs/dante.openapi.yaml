@@ -1,0 +1,341 @@
+openapi: 3.0.3
+info:
+  title: Dante
+  version: 0.1.0
+  description: |
+    Personal finance API for Brazil. This document describes the HTTP surface
+    implemented by Dante.Server. It was derived from the controllers, application
+    contracts, and DomainExceptionHandler. Responses were not captured from a
+    running server.
+
+    Register and login are public. Every other route requires a bearer JWT issued
+    by login. The token lifetime is one hour. Account reads and deletes are limited
+    to the user id in the token subject.
+
+    Domain errors use `{ "error": "<message>" }`. A missing or rejected bearer
+    token is rejected by the authentication middleware before a controller runs.
+    That challenge is a 401 and is not the domain error body. The exact challenge
+    body was not captured from a live response.
+servers:
+  - url: http://localhost:5259
+    description: Local development profile
+tags:
+  - name: Auth
+  - name: Banks
+  - name: Accounts
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      summary: Create a user
+      description: |
+        Stores a PBKDF2 password hash. The username is unique without regard to case.
+        There is no route that reads the user resource named in the Location header.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+            examples:
+              valid:
+                value:
+                  username: ada
+                  password: correct-horse
+      responses:
+        '201':
+          description: User created.
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Path of the created user, `/api/users/{id}`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                username: ada
+                createdAt: '2026-11-21T15:00:00+00:00'
+        '400':
+          description: Username or password failed validation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                username:
+                  value:
+                    error: Username must be 3 to 32 characters and use letters, digits, dots, underscores, or hyphens.
+                password:
+                  value:
+                    error: Password must be 8 to 128 characters.
+        '409':
+          description: Username is already in use, including a difference only in case.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Username is already in use.
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Issue an access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+            example:
+              username: ada
+              password: correct-horse
+      responses:
+        '200':
+          description: Token issued. `expiresAt` is one hour after issue.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+              example:
+                accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example
+                expiresAt: '2026-11-21T16:00:00+00:00'
+        '401':
+          description: Unknown user, empty password, or password mismatch. The message does not say which.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid username or password.
+  /api/banks:
+    get:
+      tags: [Banks]
+      operationId: listBanks
+      summary: List banks
+      description: Ordered by short name. The catalog is filled from BrasilAPI on startup and is not writable through this API.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Bank catalog.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bank'
+              example:
+                - id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                  ispb: '00000000'
+                  code: 1
+                  fullName: Banco do Brasil S.A.
+                  shortName: BCO DO BRASIL S.A.
+                  logoUrl: https://brasilapi.com.br/api/banks/v1/00000000/logo
+        '401':
+          description: Missing or rejected bearer token. Body shape was not captured from a live challenge.
+  /api/accounts:
+    get:
+      tags: [Accounts]
+      operationId: listAccounts
+      summary: List the caller's accounts
+      description: Ordered by account name. Another user's accounts are omitted.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Accounts owned by the token subject.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+              example:
+                - id: 11111111-1111-1111-1111-111111111111
+                  name: Checking
+                  bank:
+                    id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                    ispb: '00000000'
+                    code: 1
+                    fullName: Banco do Brasil S.A.
+                    shortName: BCO DO BRASIL S.A.
+                    logoUrl: null
+        '401':
+          description: Missing or rejected bearer token, or a token whose subject is not a user id. A bad subject uses the domain error body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid username or password.
+    post:
+      tags: [Accounts]
+      operationId: createAccount
+      summary: Open an account at a known bank
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccount'
+            example:
+              bankId: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+              name: Checking
+      responses:
+        '201':
+          description: Account created.
+          headers:
+            Location:
+              schema:
+                type: string
+              description: `/api/accounts/{id}`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Missing bank, unknown bank, or invalid account name.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                bankRequired:
+                  value:
+                    error: A bank is required.
+                bankMissing:
+                  value:
+                    error: Bank was not found.
+                name:
+                  value:
+                    error: Account name must be 1 to 80 characters.
+        '401':
+          description: Missing or rejected bearer token.
+  /api/accounts/{id}:
+    delete:
+      tags: [Accounts]
+      operationId: deleteAccount
+      summary: Delete an account owned by the caller
+      description: An account that belongs to someone else is reported as not found.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Account deleted. No response body.
+        '404':
+          description: No account with this id belongs to the caller.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Account was not found.
+        '401':
+          description: Missing or rejected bearer token.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Credentials:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Za-z0-9._-]{3,32}$'
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+    User:
+      type: object
+      required: [id, username, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Login:
+      type: object
+      required: [accessToken, expiresAt]
+      properties:
+        accessToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    Bank:
+      type: object
+      required: [id, ispb, fullName, shortName]
+      properties:
+        id:
+          type: string
+          format: uuid
+        ispb:
+          type: string
+          minLength: 8
+          maxLength: 8
+        code:
+          type: integer
+          nullable: true
+          description: COMPE code. Absent from the source when the bank has none.
+        fullName:
+          type: string
+        shortName:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+    Account:
+      type: object
+      required: [id, name, bank]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        bank:
+          $ref: '#/components/schemas/Bank'
+    CreateAccount:
+      type: object
+      required: [bankId, name]
+      properties:
+        bankId:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+          nullable: true
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

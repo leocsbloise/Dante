@@ -1,0 +1,16 @@
+$kind: http-example
+name: 204 No Content
+order: 1000
+request:
+  method: DELETE
+  url: http://localhost:5259/api/accounts/11111111-1111-1111-1111-111111111111
+  headers:
+    - key: Authorization
+      value: Bearer {{access_token}}
+response:
+  statusCode: 204
+  statusText: No Content
+  headers: []
+  body:
+    type: text
+    content: ""

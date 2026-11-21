@@ -1,0 +1,22 @@
+name: Local
+values:
+  - key: base_url
+    value: "http://localhost:5259"
+    enabled: true
+    type: default
+    description: Dante.Server development URL
+  - key: username
+    value: ""
+    enabled: true
+    type: secret
+    description: Fill locally. Do not commit a real username.
+  - key: password
+    value: ""
+    enabled: true
+    type: secret
+    description: Fill locally. Do not commit a password.
+  - key: bank_id
+    value: ""
+    enabled: true
+    type: default
+    description: Bank id copied from List banks.

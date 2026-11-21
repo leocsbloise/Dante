@@ -1,0 +1,5 @@
+$kind: http-request
+order: 3000
+method: DELETE
+url: "{{base_url}}/api/accounts/{{account_id}}"
+examples: ./.resources/Delete account.resources/examples/

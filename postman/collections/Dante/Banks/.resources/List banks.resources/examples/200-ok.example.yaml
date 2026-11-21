@@ -1,0 +1,19 @@
+$kind: http-example
+name: 200 OK
+order: 1000
+request:
+  method: GET
+  url: http://localhost:5259/api/banks
+  headers:
+    - key: Authorization
+      value: Bearer {{access_token}}
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      [{"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","ispb":"00000000","code":1,"fullName":"Banco do Brasil S.A.","shortName":"BCO DO BRASIL S.A.","logoUrl":null}]

@@ -1,0 +1,10 @@
+$kind: collection
+description: |
+  HTTP API for the Dante personal finance server. Auth routes are public. Bank and account routes send the bearer token saved by Login. base_url, username, and password come from the Local environment. The access token is stored only as a collection variable for the current run.
+variables:
+  access_token: ""
+  account_id: ""
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"

@@ -1,0 +1,4 @@
+$kind: collection
+name: Accounts
+description: Accounts belonging to the user in the access token.
+order: 3000
