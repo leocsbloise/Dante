@@ -59,7 +59,7 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
 
         var sameAccount = await client.PostAsJsonAsync("/api/ledger", Entry(account, account, 10, when));
         Assert.Equal(HttpStatusCode.BadRequest, sameAccount.StatusCode);
-        Assert.Equal("The debit and credit accounts must be different.", (await sameAccount.Content.ReadFromJsonAsync<ErrorBody>())?.Error);
+        Assert.Equal("The debit and credit accounts must be different.", (await sameAccount.Content.ReadFromJsonAsync<Envelope<Dictionary<string, string>>>())?.Data?["debitAccountId"]);
 
         var missing = await client.PostAsJsonAsync("/api/ledger", Entry(account, Guid.NewGuid(), 10, when));
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
@@ -70,15 +70,15 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
         var savings = await CreateAccountAsync(owner.AccessToken, bank.Id, "Savings");
         var zero = await client.PostAsJsonAsync("/api/ledger", Entry(account, savings, 0, when));
         Assert.Equal(HttpStatusCode.BadRequest, zero.StatusCode);
-        Assert.Equal("Amount must be greater than zero.", (await zero.Content.ReadFromJsonAsync<ErrorBody>())?.Error);
+        Assert.Equal("Amount must be greater than zero.", (await zero.Content.ReadFromJsonAsync<Envelope<Dictionary<string, string>>>())?.Data?["amount"]);
 
         var negative = await client.PostAsJsonAsync("/api/ledger", Entry(account, savings, -1, when));
         Assert.Equal(HttpStatusCode.BadRequest, negative.StatusCode);
-        Assert.Equal("Amount must be greater than zero.", (await negative.Content.ReadFromJsonAsync<ErrorBody>())?.Error);
+        Assert.Equal("Amount must be greater than zero.", (await negative.Content.ReadFromJsonAsync<Envelope<Dictionary<string, string>>>())?.Data?["amount"]);
 
         var cents = await client.PostAsJsonAsync("/api/ledger", Entry(account, savings, 1.005m, when));
         Assert.Equal(HttpStatusCode.BadRequest, cents.StatusCode);
-        Assert.Equal("Amount must have at most two decimal places.", (await cents.Content.ReadFromJsonAsync<ErrorBody>())?.Error);
+        Assert.Equal("Amount must have at most two decimal places.", (await cents.Content.ReadFromJsonAsync<Envelope<Dictionary<string, string>>>())?.Data?["amount"]);
 
         var zone = await client.PostAsJsonAsync("/api/ledger", new
         {
@@ -89,7 +89,7 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
             timeZone = "Not/AZone",
         });
         Assert.Equal(HttpStatusCode.BadRequest, zone.StatusCode);
-        Assert.Equal("Time zone was not recognized.", (await zone.Content.ReadFromJsonAsync<ErrorBody>())?.Error);
+        Assert.Equal("Time zone was not recognized.", (await zone.Content.ReadFromJsonAsync<Envelope<Dictionary<string, string>>>())?.Data?["timeZone"]);
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
         var entry = await ReadEntry(created);
 
         var deleted = await client.DeleteAsync($"/api/accounts/{debit}");
-        Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, deleted.StatusCode);
 
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<DanteDbContext>();
@@ -165,7 +165,7 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
         Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
         Assert.Equal(
             "A debit account, a credit account, or a time window is required.",
-            (await missing.Content.ReadFromJsonAsync<ErrorBody>())?.Error);
+            (await missing.Content.ReadFromJsonAsync<Envelope<object>>())?.Message);
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
         Assert.Equal(HttpStatusCode.BadRequest, changed.StatusCode);
         Assert.Equal(
             "The cursor belongs to a different search.",
-            (await changed.Content.ReadFromJsonAsync<ErrorBody>())?.Error);
+            (await changed.Content.ReadFromJsonAsync<Envelope<Dictionary<string, string>>>())?.Data?["cursor"]);
     }
 
     [Fact]
@@ -236,7 +236,7 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
         Assert.Equal(HttpStatusCode.BadRequest, gap.StatusCode);
         Assert.Equal(
             "The local time does not exist in this time zone.",
-            (await gap.Content.ReadFromJsonAsync<ErrorBody>())?.Error);
+            (await gap.Content.ReadFromJsonAsync<Envelope<Dictionary<string, string>>>())?.Data?["from"]);
     }
 
     private async Task PostEntry(string accessToken, Guid debit, Guid credit, decimal amount, DateTimeOffset occurredAt)
@@ -265,7 +265,8 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
     {
         var body = await response.Content.ReadAsStringAsync();
         Assert.True(response.IsSuccessStatusCode, body);
-        return System.Text.Json.JsonSerializer.Deserialize<LedgerPageBody>(body, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+        var envelope = System.Text.Json.JsonSerializer.Deserialize<Envelope<LedgerPageBody>>(body, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+        return envelope.Data!;
     }
 
     private static object Entry(Guid debit, Guid credit, decimal amount, DateTimeOffset occurredAt) => new
@@ -289,7 +290,7 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
         using var client = Authorized(accessToken);
         var response = await client.PostAsJsonAsync("/api/accounts", new { bankId, name });
         response.EnsureSuccessStatusCode();
-        var account = await response.Content.ReadFromJsonAsync<AccountBody>();
+        var account = (await response.Content.ReadFromJsonAsync<Envelope<AccountBody>>())?.Data;
         return account!.Id;
     }
 
@@ -319,12 +320,12 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
         register.EnsureSuccessStatusCode();
         var login = await client.PostAsJsonAsync("/api/auth/login", new { username, password = "correct-horse" });
         login.EnsureSuccessStatusCode();
-        return (await login.Content.ReadFromJsonAsync<LoginBody>())!;
+        return (await login.Content.ReadFromJsonAsync<Envelope<LoginBody>>())!.Data!;
     }
 
     private static async Task<LedgerBody> ReadEntry(HttpResponseMessage response)
     {
-        return (await response.Content.ReadFromJsonAsync<LedgerBody>())!;
+        return (await response.Content.ReadFromJsonAsync<Envelope<LedgerBody>>())!.Data!;
     }
 
     private sealed record LoginBody(string AccessToken, DateTimeOffset ExpiresAt);
@@ -341,5 +342,4 @@ public sealed class LedgerApiTests(DanteApiFactory factory)
 
     private sealed record LedgerPageBody(List<LedgerBody> Entries, string? NextCursor);
 
-    private sealed record ErrorBody(string Error);
 }

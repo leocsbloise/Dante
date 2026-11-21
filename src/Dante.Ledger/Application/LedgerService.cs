@@ -14,7 +14,7 @@ public sealed class LedgerService(ILedgerRepository entries, IAccountRepository 
         await EnsureOwnedAsync(userId, [debitId, creditId], cancellationToken);
 
         if (request.OccurredAt is null)
-            throw new InvalidLedgerException("A time is required.");
+            throw new InvalidLedgerException("A time is required.", "occurredAt");
 
         var entry = LedgerEntry.Create(
             debitId,
@@ -40,7 +40,7 @@ public sealed class LedgerService(ILedgerRepository entries, IAccountRepository 
     {
         var limit = request.Limit ?? 100;
         if (limit is < 1 or > 100)
-            throw new InvalidLedgerException("Size must be from 1 to 100.");
+            throw new InvalidLedgerException("Size must be from 1 to 100.", "limit");
 
         var debitId = request.DebitAccountId;
         var creditId = request.CreditAccountId;
@@ -55,7 +55,7 @@ public sealed class LedgerService(ILedgerRepository entries, IAccountRepository 
         {
             var cursor = LedgerCursor.Read(request.Cursor);
             if (cursor.Search != search)
-                throw new InvalidLedgerException("The cursor belongs to a different search.");
+                throw new InvalidLedgerException("The cursor belongs to a different search.", "cursor");
 
             after = cursor.After;
         }

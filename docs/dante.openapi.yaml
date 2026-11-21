@@ -12,10 +12,14 @@ info:
     by login. The token lifetime is one hour. Account reads and deletes are limited
     to the user id in the token subject.
 
-    Domain errors use `{ "error": "<message>" }`. A missing or rejected bearer
-    token is rejected by the authentication middleware before a controller runs.
-    That challenge is a 401 and is not the domain error body. The exact challenge
-    body was not captured from a live response.
+    Every JSON body is an envelope: `message`, `status` (the same integer as the
+    HTTP status), `operation_id` (the W3C trace id), and optional `data`.
+    A successful resource, list, token, or page is in `data`. A field error puts
+    a map of JSON field names to sentences in `data`, and `message` is
+    "Some information needs to be corrected." A general error omits `data`.
+    A missing or rejected bearer token is `401` with message "Sign in to continue."
+    An unexpected failure is `500` with message "Something went wrong."
+    Deleting an account is `200` with message "Account deleted." and no `data`.
 servers:
   - url: http://localhost:5259
     description: Local development profile
@@ -69,10 +73,18 @@ paths:
               examples:
                 username:
                   value:
-                    error: Username must be 3 to 32 characters and use letters, digits, dots, underscores, or hyphens.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      username: Username must be 3 to 32 characters and use letters, digits, dots, underscores, or hyphens.
                 password:
                   value:
-                    error: Password must be 8 to 128 characters.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      password: Password must be 8 to 128 characters.
         '409':
           description: Username is already in use, including a difference only in case.
           content:
@@ -80,7 +92,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: Username is already in use.
+                message: Some information needs to be corrected.
+                status: 409
+                operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                data:
+                  username: Username is already in use.
   /api/auth/login:
     post:
       tags: [Auth]
@@ -112,7 +128,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: Invalid username or password.
+                message: Invalid username or password.
+                status: 401
+                operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
   /api/banks:
     get:
       tags: [Banks]
@@ -173,7 +191,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: Invalid username or password.
+                message: Invalid username or password.
+                status: 401
+                operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
     post:
       tags: [Accounts]
       operationId: createAccount
@@ -210,13 +230,25 @@ paths:
               examples:
                 bankRequired:
                   value:
-                    error: A bank is required.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      bankId: A bank is required.
                 bankMissing:
                   value:
-                    error: Bank was not found.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      bankId: Bank was not found.
                 name:
                   value:
-                    error: Account name must be 1 to 80 characters.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      name: Account name must be 1 to 80 characters.
         '401':
           description: Missing or rejected bearer token.
   /api/accounts/{id}:
@@ -235,8 +267,16 @@ paths:
             type: string
             format: uuid
       responses:
-        '204':
-          description: Account deleted. No response body.
+        '200':
+          description: Account deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: Account deleted.
+                status: 200
+                operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
         '404':
           description: No account with this id belongs to the caller.
           content:
@@ -244,7 +284,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: Account was not found.
+                message: Account was not found.
+                status: 404
+                operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
         '401':
           description: Missing or rejected bearer token.
   /api/ledger:
@@ -324,13 +366,23 @@ paths:
               examples:
                 required:
                   value:
-                    error: A debit account, a credit account, or a time window is required.
+                    message: A debit account, a credit account, or a time window is required.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
                 window:
                   value:
-                    error: The local time does not exist in this time zone.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      from: The local time does not exist in this time zone.
                 cursor:
                   value:
-                    error: The cursor belongs to a different search.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      cursor: The cursor belongs to a different search.
         '404':
           description: A supplied account is missing or belongs to someone else.
           content:
@@ -338,7 +390,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: Account was not found.
+                message: Account was not found.
+                status: 404
+                operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
         '401':
           description: Missing or rejected bearer token.
     post:
@@ -392,16 +446,33 @@ paths:
               examples:
                 accounts:
                   value:
-                    error: The debit and credit accounts must be different.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      debitAccountId: The debit and credit accounts must be different.
+                      creditAccountId: The debit and credit accounts must be different.
                 amount:
                   value:
-                    error: Amount must be greater than zero.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      amount: Amount must be greater than zero.
                 cents:
                   value:
-                    error: Amount must have at most two decimal places.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      amount: Amount must have at most two decimal places.
                 timeZone:
                   value:
-                    error: Time zone was not recognized.
+                    message: Some information needs to be corrected.
+                    status: 400
+                    operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
+                    data:
+                      timeZone: Time zone was not recognized.
         '404':
           description: One of the accounts is missing or belongs to someone else.
           content:
@@ -409,7 +480,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: Account was not found.
+                message: Account was not found.
+                status: 404
+                operation_id: 4bf92f3577b34da6a3ce929d0e0e4736
         '401':
           description: Missing or rejected bearer token.
 components:
@@ -559,7 +632,17 @@ components:
           nullable: true
     Error:
       type: object
-      required: [error]
+      required: [message, status, operation_id]
       properties:
-        error:
+        message:
           type: string
+        status:
+          type: integer
+        operation_id:
+          type: string
+          description: W3C trace id of the request span.
+        data:
+          type: object
+          additionalProperties:
+            type: string
+          description: Present for a field error. Each key is a request field.

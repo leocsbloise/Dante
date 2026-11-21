@@ -22,4 +22,4 @@ response:
   body:
     type: json
     content: |-
-      {"error":"Bank was not found."}
+      {"message":"Some information needs to be corrected.","status":400,"operation_id":"4bf92f3577b34da6a3ce929d0e0e4736","data":{"bankId":"Bank was not found."}}

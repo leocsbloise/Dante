@@ -24,4 +24,4 @@ response:
   body:
     type: json
     content: |-
-      {"id":"11111111-1111-1111-1111-111111111111","name":"Checking","bank":{"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","ispb":"00000000","code":1,"fullName":"Banco do Brasil S.A.","shortName":"BCO DO BRASIL S.A.","logoUrl":null}}
+      {"message":"Account created.","status":201,"operation_id":"4bf92f3577b34da6a3ce929d0e0e4736","data":{"id":"11111111-1111-1111-1111-111111111111","name":"Checking","bank":{"id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","ispb":"00000000","code":1,"fullName":"Banco do Brasil S.A.","shortName":"BCO DO BRASIL S.A.","logoUrl":null}}}

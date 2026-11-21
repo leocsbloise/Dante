@@ -36,7 +36,7 @@ Controllers are thin. Use `[ApiController]` and let `AddControllers` / `MapContr
 
 ## Exceptions
 
-Define specific exception types in the domain that owns the rule. Infrastructure translates persistence failures into those exceptions, such as a unique-index violation becoming `UsernameAlreadyInUseException`. `DomainExceptionHandler` maps domain exceptions to HTTP status codes. Do not catch domain exceptions inside controllers to build error responses.
+Define specific exception types in the domain that owns the rule. Infrastructure translates persistence failures into those exceptions, such as a unique-index violation becoming `UsernameAlreadyInUseException`. `DomainExceptionHandler` maps domain exceptions to the response envelope and an HTTP status code. Do not catch domain exceptions inside controllers to build error responses.
 
 ## Logging and OpenTelemetry
 
@@ -70,3 +70,5 @@ Export traces, metrics, and logs through OTLP only when `OTEL_EXPORTER_OTLP_ENDP
 | `GET` | `/api/ledger` |
 
 Bank, account, and ledger routes require the JWT. Account and ledger operations are limited to the user in the token. A ledger search accepts a debit account, a credit account, and a time window. Each one is optional, at least one is required, and each one that is present narrows the result. The window is a pair of local bounds plus an IANA time zone. Those bounds are converted to UTC before they are compared with `OccurredAt`, and the end is exclusive. Pages contain at most 100 rows and are ordered by `OccurredAt` only. The cursor continues that same search. A different filter is a new search, so the previous cursor is dropped.
+
+Every JSON body is an envelope: `message`, `status` (the HTTP status as an integer), `operation_id` (the W3C trace id of the request span), and optional `data`. A created or loaded resource is in `data`. Deleting an account returns `200` with a message and no `data`. A field error puts `{ "<field>": "<sentence>" }` in `data` and uses the message "Some information needs to be corrected." A general error omits `data` and puts the sentence in `message`. A missing or rejected bearer token is `401` with "Sign in to continue." An unexpected failure is `500` with "Something went wrong." and the exception text stays out of the body.

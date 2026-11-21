@@ -1,5 +1,5 @@
 $kind: http-example
-name: 204 No Content
+name: 200 OK
 order: 1000
 request:
   method: DELETE
@@ -8,9 +8,12 @@ request:
     - key: Authorization
       value: Bearer {{access_token}}
 response:
-  statusCode: 204
-  statusText: No Content
-  headers: []
+  statusCode: 200
+  statusText: OK
+  headers:
+    - key: Content-Type
+      value: application/json
   body:
-    type: text
-    content: ""
+    type: json
+    content: |-
+      {"message":"Account deleted.","status":200,"operation_id":"4bf92f3577b34da6a3ce929d0e0e4736"}

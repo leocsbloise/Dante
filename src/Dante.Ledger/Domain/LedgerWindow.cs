@@ -13,19 +13,19 @@ public static class LedgerWindow
             return (null, null);
 
         var zone = LedgerTimeZone.Find(timeZone);
-        var fromUtc = hasFrom ? Convert(from!, zone) : (DateTimeOffset?)null;
-        var toUtc = hasTo ? Convert(to!, zone) : (DateTimeOffset?)null;
+        var fromUtc = hasFrom ? Convert(from!, zone, "from") : (DateTimeOffset?)null;
+        var toUtc = hasTo ? Convert(to!, zone, "to") : (DateTimeOffset?)null;
         if (fromUtc is not null && toUtc is not null && fromUtc >= toUtc)
-            throw new InvalidLedgerException("The time window ends before it starts.");
+            throw new InvalidLedgerException("The time window ends before it starts.", "from", "to");
 
         return (fromUtc, toUtc);
     }
 
-    private static DateTimeOffset Convert(string text, TimeZoneInfo zone)
+    private static DateTimeOffset Convert(string text, TimeZoneInfo zone, string field)
     {
-        var local = ParseLocal(text);
+        var local = ParseLocal(text, field);
         if (zone.IsInvalidTime(local))
-            throw new InvalidLedgerException("The local time does not exist in this time zone.");
+            throw new InvalidLedgerException("The local time does not exist in this time zone.", field);
 
         if (zone.IsAmbiguousTime(local))
         {
@@ -38,20 +38,20 @@ public static class LedgerWindow
         return new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(local, zone), TimeSpan.Zero);
     }
 
-    private static DateTime ParseLocal(string text)
+    private static DateTime ParseLocal(string text, string field)
     {
         var hyphens = 0;
         foreach (var character in text)
         {
             if (character == 'Z' || character == 'z' || character == '+')
-                throw new InvalidLedgerException("A time window bound is a local time without an offset.");
+                throw new InvalidLedgerException("A time window bound is a local time without an offset.", field);
 
             if (character == '-')
                 hyphens++;
         }
 
         if (hyphens > 2)
-            throw new InvalidLedgerException("A time window bound is a local time without an offset.");
+            throw new InvalidLedgerException("A time window bound is a local time without an offset.", field);
 
         var formats = new[]
         {
@@ -61,7 +61,7 @@ public static class LedgerWindow
             "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF",
         };
         if (!DateTime.TryParseExact(text, formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var local))
-            throw new InvalidLedgerException("A time window bound was not recognized.");
+            throw new InvalidLedgerException("A time window bound was not recognized.", field);
 
         return DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
     }

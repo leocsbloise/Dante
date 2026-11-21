@@ -46,7 +46,8 @@ public sealed class ExceptionLoggingTests
             new InvalidOperationException("database unavailable"),
             CancellationToken.None);
 
-        Assert.False(handled);
+        Assert.True(handled);
+        Assert.Equal(StatusCodes.Status500InternalServerError, context.Response.StatusCode);
         Assert.Equal(ActivityStatusCode.Error, activity.Status);
         var typeName = typeof(InvalidOperationException).FullName!;
         Assert.Equal(typeName, activity.GetTagItem("exception.type"));

@@ -6,7 +6,7 @@ public static class AccountName
     {
         var name = value?.Trim() ?? string.Empty;
         if (name.Length is < 1 or > 80)
-            throw new InvalidAccountException("Account name must be 1 to 80 characters.");
+            throw new InvalidAccountException("Account name must be 1 to 80 characters.", "name");
 
         return name;
     }
